@@ -114,6 +114,7 @@
     "minimist": "^1.2.8",
     "ms": "^2.1.3",
     "natural-compare": "^1.4.0",
+    "nodemon": "^3.0.1",
     "object-inspect": "^1.12.3",
     "object-keys": "^1.1.1",
     "object.assign": "^4.1.4",
@@ -171,7 +172,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index"
+    "start": "NODE_ENV=staging nodemon index",
+    "production": "NODE_ENV=production nodemon index"
   },
   "author": "",
   "license": "ISC",

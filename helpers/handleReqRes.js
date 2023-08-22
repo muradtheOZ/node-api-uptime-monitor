@@ -31,18 +31,20 @@ handler.handleReqRes = (req, res) => {
     ? routes[trimmedPath]
     : notFoundHandler;
 
-  chosenHandler(requestProperties, (statusCode, payload) => {
-    statusCode = typeof statusCode === "number" ? statusCode : 500;
-    payload = typeof payload === "object" ? payload : {};
-    const payloadString = JSON.stringify(payload);
-    res.writeHead(statusCode);
-    res.end(payloadString);
-  });
   req.on("data", (buffer) => {
     realData += decoder.write(buffer);
   });
 
-  req.on("end", () => {});
+  req.on("end", () => {
+    realData += decoder.end();
+    chosenHandler(requestProperties, (statusCode, payload) => {
+      statusCode = typeof statusCode === "number" ? statusCode : 500;
+      payload = typeof payload === "object" ? payload : {};
+      const payloadString = JSON.stringify(payload);
+      res.writeHead(statusCode);
+      res.end(payloadString);
+    });
+  });
 };
 
 module.exports = handler;
