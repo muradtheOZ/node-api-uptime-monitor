@@ -172,6 +172,35 @@ handler._user.put = (requestProperties, callback) => {
 
 };
 
-handler._user.delete = (requestProperties, callback) => {};
+handler._user.delete = (requestProperties, callback) => {
+  const phone =
+  typeof requestProperties.body.phone === 'string' &&
+  requestProperties.body.phone.trim().length === 11
+    ? requestProperties.body.phone
+    : false;
+
+    if(phone){
+      data.read('user', phone, (err, uData) => {
+        const userData ={...uData}
+        if (!err && userData) {
+          // delete the file
+          data.delete('user',phone,(err)=>{
+            if(!err){
+              callback(200,{message:'user Deleted successfully'})
+            }else{
+              callback(500,{error:'server side error occured',err})
+            }
+          })
+        } else {
+          callback(400, {
+            error:'Your porvided user does not esxist'
+          });
+        }
+      });
+
+    }else{
+      callback(400,{error:'Your porvided user does not esxist'})
+    }
+};
 
 module.exports = handler;
