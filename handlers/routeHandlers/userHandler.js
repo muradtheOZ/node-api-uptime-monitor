@@ -143,26 +143,39 @@ handler._user.put = (requestProperties, callback) => {
       : false;
 
   if (phone) {
-    if (firstname || lastname || password) {
-      // lookup the user
-      data.read('user', phone, (err, uData) => {
-        const userData = { ...parseJson(uData) };
-        if (!err && userData) {
-          // write the file
-          if (firstname) {
-            userData.firstname = firstname;
-          }
-          if (lastname) {
-            userData.lastname = lastname;
-          }
-          if (password) {
-            userData.password = hash(password);
-          }
-          data.update('user', phone, userData, (err) => {
-            if (!err) {
-              callback(200, { message: 'User Updated' });
+    let token =
+      typeof requestProperties.headersObject.token == 'string'
+        ? requestProperties.headersObject.token
+        : false;
+
+    tokenHandler._token.verify(token, phone, (tokenId) => {
+      if (tokenId) {
+        if (firstname || lastname || password) {
+          // lookup the user
+          data.read('user', phone, (err, uData) => {
+            const userData = { ...parseJson(uData) };
+            if (!err && userData) {
+              // write the file
+              if (firstname) {
+                userData.firstname = firstname;
+              }
+              if (lastname) {
+                userData.lastname = lastname;
+              }
+              if (password) {
+                userData.password = hash(password);
+              }
+              data.update('user', phone, userData, (err) => {
+                if (!err) {
+                  callback(200, { message: 'User Updated' });
+                } else {
+                  callback(500, { error: 'Could not update user!', err });
+                }
+              });
             } else {
-              callback(500, { error: 'Could not update user!', err });
+              callback(400, {
+                error: 'You have problem in your request',
+              });
             }
           });
         } else {
@@ -170,12 +183,12 @@ handler._user.put = (requestProperties, callback) => {
             error: 'You have problem in your request',
           });
         }
-      });
-    } else {
-      callback(400, {
-        error: 'You have problem in your request',
-      });
-    }
+      } else {
+        callback(403, {
+          error: 'Authentication failed',
+        });
+      }
+    });
   } else {
     callback('404', { error: 'Invalid phone number' });
   }
@@ -189,20 +202,33 @@ handler._user.delete = (requestProperties, callback) => {
       : false;
 
   if (phone) {
-    data.read('user', phone, (err, uData) => {
-      const userData = { ...uData };
-      if (!err && userData) {
-        // delete the file
-        data.delete('user', phone, (err) => {
-          if (!err) {
-            callback(200, { message: 'user Deleted successfully' });
+    let token =
+      typeof requestProperties.headersObject.token == 'string'
+        ? requestProperties.headersObject.token
+        : false;
+
+    tokenHandler._token.verify(token, phone, (tokenId) => {
+      if (tokenId) {
+        data.read('user', phone, (err, uData) => {
+          const userData = { ...uData };
+          if (!err && userData) {
+            // delete the file
+            data.delete('user', phone, (err) => {
+              if (!err) {
+                callback(200, { message: 'user Deleted successfully' });
+              } else {
+                callback(500, { error: 'server side error occured', err });
+              }
+            });
           } else {
-            callback(500, { error: 'server side error occured', err });
+            callback(400, {
+              error: 'Your porvided user does not esxist',
+            });
           }
         });
       } else {
-        callback(400, {
-          error: 'Your porvided user does not esxist',
+        callback(403, {
+          error: 'Authentication failed',
         });
       }
     });
