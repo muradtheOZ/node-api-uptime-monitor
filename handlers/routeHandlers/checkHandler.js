@@ -164,7 +164,104 @@ handler._check.get = (requestProperties, callback) => {
       }
 };
 
-handler._check.put = (requestProperties, callback) => {};
+handler._check.put = (requestProperties, callback) => {
+  const id =
+        typeof requestProperties.body.id === 'string' &&
+        requestProperties.body.id.trim().length === 20
+          ? requestProperties.body.id
+          : false;
+
+          let protocol = typeof (requestProperties.body.protocol) === 'string' &&
+   ['http','https'].indexOf(requestProperties.body.protocol)> -1
+      ? requestProperties.body.protocol
+      : false;
+
+      let url = typeof (requestProperties.body.url) === 'string' && requestProperties.body.url.trim().length > 0
+      ? requestProperties.body.url
+      : false;
+
+      let method = typeof (requestProperties.body.method) === 'string' && ['GET','POST','PUT','DELETE'].indexOf(requestProperties.body.method)> -1
+      ? requestProperties.body.method
+      : false;
+
+      let sucessCode = typeof (requestProperties.body.sucessCode) === 'object' && requestProperties.body.sucessCode instanceof Array
+      ? requestProperties.body.sucessCode
+      : false;
+
+      let timeoutsecond = typeof requestProperties.body.timeoutsecond === 'number' && requestProperties.body.timeoutsecond % 1 === 0 && requestProperties.body.timeoutsecond >= 1 && requestProperties.body.timeoutsecond <= 5? requestProperties.body.timeoutsecond: false;
+
+          if(id){
+            if(timeoutsecond || sucessCode || method || url || protocol){
+              data.read('checks',id,(err,checkData)=>{
+                if(!err && checkData){
+                  const checkObject = parseJson(checkData)
+                  let token =
+                  typeof requestProperties.headersObject.token == 'string'
+                  ? requestProperties.headersObject.token
+                  : false;
+
+                  if(token){
+                    tokenHandler._token.verify(token,parseJson(checkData).userPhone, (isToken)=>{
+                      if(isToken){
+                        if(timeoutsecond){
+                          checkObject.timeoutsecond = timeoutsecond
+                        }
+                        if(sucessCode){
+                          checkObject.sucessCode = sucessCode
+                        }
+
+                        if(method){
+                          checkObject.method = method
+                        }
+
+                        if(url){
+                          checkObject.url = url
+                        }
+
+                        if(protocol){
+                          checkObject.protocol = protocol
+                        }
+                        data.update('checks',id,checkObject,(err)=>{
+                          if(!err){
+                            callback(200)
+                          }
+                          else{
+                            callback(500,{
+                              error:'There was a server side error'
+                            })
+                          }
+                        })
+
+                      }else{
+                        callback(403,{
+                          error:'Authentication error'
+                        })
+                      }
+                    })
+                  }else{
+                    callback(400,{
+                      error:'Authentication error'
+                    })
+                  }
+
+                }else{
+                  callback(500,{
+                    error: 'There is a server side error'
+                  })
+                }
+              })
+            }
+            else{
+              callback(400,{
+                error: 'there is an error in update parameter'
+              })
+            }
+          }else{
+            callback(400,{
+              error:'There is an error in your input'
+            })
+          }
+};
 
 handler._check.delete = (requestProperties, callback) => {};
 
